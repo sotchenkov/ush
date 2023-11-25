@@ -5,6 +5,8 @@ import (
 	"log/slog"
 	"os"
 	"ush/internal/config"
+	"ush/internal/lib/logger/sl"
+	"ush/internal/storage/sqlite"
 )
 
 const (
@@ -20,6 +22,26 @@ func main() {
 	log.Info("starting ush", slog.String("env", cfg.Env))
 
 	fmt.Println(cfg)
+
+	storage, err := sqlite.New(cfg.StoragePath)
+	if err != nil {
+		log.Error("Failed to init db", sl.Err(err))
+		os.Exit(1)
+	}
+	
+	err = storage.SaveURL("https://www.google.com", "google")
+	if err != nil {
+		log.Error("Failed to init db", sl.Err(err))
+		os.Exit(1)
+	}
+
+	err = storage.SaveURL("https://www.google.com", "google")
+	if err != nil {
+		log.Error("Failed to init db", sl.Err(err))
+		os.Exit(1)
+	}
+
+	_ = storage
 }
 
 func setupLogger(env string) *slog.Logger {
