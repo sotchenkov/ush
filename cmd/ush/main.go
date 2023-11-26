@@ -1,8 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"log/slog"
+	"net/http"
 	"os"
 	"ush/internal/config"
 	"ush/internal/http-server/handlers/url/save"
@@ -24,9 +24,6 @@ func main() {
 	cfg := config.MustLoad()
 
 	log := setupLogger(cfg.Env)
-	log.Info("starting ush", slog.String("env", cfg.Env))
-
-	fmt.Println(cfg)
 
 	storage, err := sqlite.New(cfg.StoragePath)
 	if err != nil {
@@ -34,23 +31,33 @@ func main() {
 		os.Exit(1)
 	}
 
-	// err = storage.SaveURL("https://www.google.com", "google")
-	// if err != nil {
-	// 	log.Error("Failed to init db", sl.Err(err))
-	// 	os.Exit(1)
-	// }
-
 	_ = storage
 
 	router := chi.NewRouter()
 
 	router.Use(middleware.RequestID)
-	// router.Use(middleware.Logger)
+	router.Use(middleware.Logger)
 	router.Use(mwLogger.New(log))
 	router.Use(middleware.Recoverer)
 	router.Use(middleware.URLFormat)
 
 	router.Post("/url", save.New(log, storage))
+
+	log.Info("starting server", slog.String("address", cfg.Address))
+
+	srv := &http.Server{
+		Addr:         cfg.Address,
+		Handler:      router,
+		ReadTimeout:  cfg.HTTPServer.Timeout,
+		WriteTimeout: cfg.HTTPServer.Timeout,
+		IdleTimeout:  cfg.HTTPServer.IdleTimeout,
+	}
+
+	if err := srv.ListenAndServe(); err != nil {
+		log.Error("failed to start server: ", err)
+	}
+
+	log.Error("server stopped")
 }
 
 func setupLogger(env string) *slog.Logger {
