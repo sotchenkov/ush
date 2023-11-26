@@ -61,21 +61,22 @@ func (s *Storage) SaveURL(urlToSave string, alias string) error {
 }
 
 func (s *Storage) GetURL(alias string) (string, error) {
-	const fn = "storage.sqlite.GetURL"
+	const op = "storage.sqlite.GetURL"
 
-	stmt, err := s.db.Prepare("SELECT * FROM urls WHERE alias = ?")
+	stmt, err := s.db.Prepare("SELECT url FROM urls WHERE alias = ?")
 	if err != nil {
-		return "", fmt.Errorf("%s: %w", fn, err)
+		return "", fmt.Errorf("%s: prepare statement: %w", op, err)
 	}
 
 	var resURL string
+
 	err = stmt.QueryRow(alias).Scan(&resURL)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return "", storage.ErrURLNotFound
 		}
 
-		return "", fmt.Errorf("%s: executed statement: %w", fn, err)
+		return "", fmt.Errorf("%s: execute statement: %w", op, err)
 	}
 
 	return resURL, nil

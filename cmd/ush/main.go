@@ -32,7 +32,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	_ = storage
+	// _ = storage
 
 	router := chi.NewRouter()
 
@@ -47,7 +47,7 @@ func main() {
 			cfg.HTTPServer.User: cfg.HTTPServer.Password,
 		}))	
 
-		r.Post("/url", save.New(log, storage))
+		r.Post("/", save.New(log, storage))
 	})
 
 	router.Get("/{alias}", redirect.New(log, storage))
