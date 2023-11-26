@@ -42,7 +42,14 @@ func main() {
 	router.Use(middleware.Recoverer)
 	router.Use(middleware.URLFormat)
 
-	router.Post("/url", save.New(log, storage))
+	router.Route("/url", func(r chi.Router) {
+		r.Use(middleware.BasicAuth("ush", map[string]string{
+			cfg.HTTPServer.User: cfg.HTTPServer.Password,
+		}))	
+
+		r.Post("/url", save.New(log, storage))
+	})
+
 	router.Get("/{alias}", redirect.New(log, storage))
 	// reoter.Delete("/{alias}", delete.New(log, storage))
 

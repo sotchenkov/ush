@@ -4,3 +4,5 @@ http_server:
   address: "localhost:9999"
   timeout: 4s
   idle_timeout: 60s
+  user: "root"
+  password: "pass"
