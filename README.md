@@ -19,6 +19,7 @@ body: {
 
 ```
 [GET] http://host:port/{alias} - Redirect by alias
-```
 
+```
+[reference](https://github.com/GolangLessons/url-shortener)
 
