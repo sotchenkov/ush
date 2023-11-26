@@ -2,6 +2,7 @@ package save
 
 import (
 	"errors"
+	"io"
 	"log/slog"
 	"net/http"
 	resp "ush/internal/lib/api/response"
@@ -15,7 +16,7 @@ import (
 )
 
 type Request struct {
-	URL   string `json:"url" validate:"required, url"`
+	URL   string `json:"url" validate:"required,url"`
 	Alias string `json:"alias,omitempty"`
 }
 
@@ -24,11 +25,13 @@ type Response struct {
 	Alias string `json:"alias,omitempty"`
 }
 
+
+//go:generate go run github.com/vektra/mockery/v2@v2.28.2 --name=URLSaver
 type URLSaver interface {
 	SaveURL(urlToSave string, alias string) error
 }
 
-const aliasLength = 7
+const aliasLength = 6
 
 func New(log *slog.Logger, urlSaver URLSaver) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -42,8 +45,18 @@ func New(log *slog.Logger, urlSaver URLSaver) http.HandlerFunc {
 		var req Request
 
 		err := render.DecodeJSON(r.Body, &req)
+		if errors.Is(err, io.EOF) {
+			// Такую ошибку встретим, если получили запрос с пустым телом.
+			// Обработаем её отдельно
+			log.Error("request body is empty")
+
+			render.JSON(w, r, resp.Error("empty request"))
+
+			return
+		}
+
 		if err != nil {
-			log.Error("failed to decode request body: ", sl.Err(err))
+			log.Error("failed to decode request body", sl.Err(err))
 
 			render.JSON(w, r, resp.Error("failed to decode request"))
 
